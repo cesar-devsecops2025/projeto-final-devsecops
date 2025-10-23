@@ -41,10 +41,11 @@ jobs:
     # Ferramenta: OWASP Dependency Check
     # =================================================================
     - name: Scan de Dependências com OWASP Dependency Check
-      uses: owasp/dependency-check-action@v2
-      with:
-        scan-args: "--project 'Juice Shop' --format 'HTML' --out 'reports'"
-        output-format: 'HTML'
+  uses: anchore/scan-action@v3
+  with:
+    image: 'bkimminich/juice-shop'
+    fail-build: false
+    severity-cutoff: high
 
     # =================================================================
     # TÉCNICA 3: ANÁLISE ESTÁTICA DO CÓDIGO (SAST - Static Application Security Testing)
