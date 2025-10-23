@@ -1,0 +1,63 @@
+# Nome da sua pipeline, que vai aparecer no GitHub
+name: Pipeline de Segurança DevSecOps
+
+# Define o gatilho: essa pipeline vai rodar sempre que você fizer um 'push' para a branch 'main'
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Define os 'jobs' ou tarefas que a pipeline vai executar
+jobs:
+  scans-de-seguranca:
+    # A pipeline vai rodar em uma máquina virtual do GitHub com a última versão do Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    # Passo 1: Clona o seu repositório para a máquina virtual
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    # Passo 2: Constrói a imagem Docker da aplicação para podermos analisá-la
+    - name: Build da imagem Docker do Juice Shop
+      run: docker build . --file Dockerfile --tag juice-shop-local # Assumindo que você tenha um Dockerfile
+
+    # =================================================================
+    # TÉCNICA 1: ANÁLISE DE VULNERABILIDADES NA IMAGEM (Container Scanning)
+    # Ferramenta: Trivy
+    # =================================================================
+    - name: Scan da imagem Docker com Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'bkimminich/juice-shop' # Vamos escanear a imagem original
+        format: 'table'
+        exit-code: '0' # Não falha a pipeline se encontrar vulnerabilidades (para podermos ver o relatório)
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+
+    # =================================================================
+    # TÉCNICA 2: ANÁLISE DE DEPENDÊNCIAS (SCA - Software Composition Analysis)
+    # Ferramenta: OWASP Dependency Check
+    # =================================================================
+    - name: Scan de Dependências com OWASP Dependency Check
+      uses: dependency-check/scan-action@v0.3.0
+      with:
+        scan-args: "--project 'Juice Shop' --format 'HTML' --out 'reports'"
+        output-format: 'HTML'
+
+    # =================================================================
+    # TÉCNICA 3: ANÁLISE ESTÁTICA DO CÓDIGO (SAST - Static Application Security Testing)
+    # Ferramenta: SonarCloud (versão em nuvem do SonarQube, mais fácil de usar)
+    # =================================================================
+    - name: Scan de Código com SonarCloud
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Token padrão do GitHub
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Você precisará criar este 'secret' no GitHub
+      with:
+        # Para o SonarCloud funcionar, ele precisa de um arquivo de configuração.
+        # Crie um arquivo 'sonar-project.properties' na raiz do seu projeto.
+        args: >
+          -Dsonar.organization=sua-organizacao-no-sonar
+          -Dsonar.projectKey=seu-projeto-no-sonar
