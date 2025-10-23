@@ -41,7 +41,7 @@ jobs:
     # Ferramenta: OWASP Dependency Check
     # =================================================================
     - name: Scan de Dependências com OWASP Dependency Check
-      uses: dependency-check/scan-action@v0.3.0
+      uses: owasp/dependency-check-action@v2
       with:
         scan-args: "--project 'Juice Shop' --format 'HTML' --out 'reports'"
         output-format: 'HTML'
